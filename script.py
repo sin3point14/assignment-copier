@@ -1,14 +1,23 @@
 from PIL import Image, ImageEnhance
 import fitz
 import os
+import argparse
 
 # Heuristically check if current pixel is blue ink
-def check_ink(col):
+def check_blue_ink(col):
     return (col[2] > 190 and (col[2] - col[0] > 40 or col[2] - col[1] > 40))
 
-# Make it very dark
-def modulate_color(color):
+# Heuristically check if current pixel is black ink
+def check_black_ink(col):
+    return (col[0] < 110 and col[1] < 110 and col[2] < 110)
+
+# Make it blackish
+def modulate_color_black(color):
     return (color[0]//2, color[1]//2, color[2]//6)
+
+# Make it bluish
+def modulate_color_blue(color):
+    return (min(int(color[0] * 1.25), 180), min(int(color[1] * 1.25), 180), min(color[2] * 2, 255))
 
 # checks the (pixel_range + 1) x (pixel_range + 1) pixels around colored pixel and tests if they are ink pixel by heuristics
 def check_surroundings(x, y, color):
@@ -18,10 +27,30 @@ def check_surroundings(x, y, color):
             if check_ink(color):
                 test_ink += 1
                 if (test_ink >= min_ink):
-                    out.putpixel((x, y), modulate_color(color))
+                    out.putpixel((x, y), modulate_ink(color))
                     return
     out.putpixel((x, y), (255, 255, 255))
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--input-ink', nargs='?', default="blue", choices=['blue', 'black'], help="input ink color to be used for detection, dark blue ink may give better results with black detection mode")
+parser.add_argument('-o', '--output-ink', nargs='?', default="black", choices=['blue', 'black'], help="output ink color of the generated copy")
+args = parser.parse_args()
+print(args)
+
+if(args.input_ink == "blue"):
+    check_ink = check_blue_ink
+    print('blue')
+elif(args.input_ink == "black"):
+    check_ink = check_black_ink
+    print('black')
+
+if(args.output_ink == "blue"):
+    modulate_ink = modulate_color_blue
+    print('blue')
+elif(args.output_ink == "black"):
+    modulate_ink = modulate_color_black
+    print('black')
 
 if not os.path.exists("./after-pdf"):
     os.makedirs("./after-pdf")
@@ -50,7 +79,7 @@ for pdf in pdfs:
 
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
-        print("Converting Image no: %s" % (i))
+        print("Converting Image no: %s" % (i + 1))
 
         filter = ImageEnhance.Color(img)
         img = filter.enhance(4)
@@ -65,7 +94,11 @@ for pdf in pdfs:
                 check_surroundings(x, y, img.getpixel((x, y)))
 
         final_images.append(out)
-        print("Completed processing Image no: %s" % (i))
+        print("Completed processing Image no: %s" % (i + 1))
 
-    final_images[0].save("./after-pdf/" + pdf, save_all=True, append_images=final_images)
+        # for testing kek
+        # out.save('./kek.png')
+
+    final_images[0].save("./after-pdf/" + pdf,
+                         save_all=True, append_images=final_images)
     print("Completed Processing PDF: %s" % (pdf))
