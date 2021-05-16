@@ -7,7 +7,7 @@ import argparse
 def check_blue_ink(col):
     if col[2] == 255:
         return col[2] > col[1] and col[2] > col[0]
-    return col[2] > col[0] and col[2] > col[1] and (col[2] - col[0] > 20 or col[2] - col[1] > 20) and (col[0] < 180 and col[1] < 180)
+    return col[2] > col[0] and col[2] > col[1] and (col[2] - col[0] > 60 or col[2] - col[1] > 60) and (col[0] < 180 and col[1] < 180)
 
 # Heuristically check if current pixel is black ink on the enchanced image
 def check_black_ink(col):
