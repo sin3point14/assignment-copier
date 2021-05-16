@@ -3,13 +3,15 @@ import fitz
 import os
 import argparse
 
-# Heuristically check if current pixel is blue ink
+# Heuristically check if current pixel is blue ink on the enchanced image
 def check_blue_ink(col):
-    return (col[2] > 190 and (col[2] - col[0] > 40 or col[2] - col[1] > 40))
+    if col[2] == 255:
+        return col[2] > col[1] and col[2] > col[0]
+    return col[2] > col[0] and col[2] > col[1] and (col[2] - col[0] > 20 or col[2] - col[1] > 20) and (col[0] < 180 and col[1] < 180)
 
-# Heuristically check if current pixel is black ink
+# Heuristically check if current pixel is black ink on the enchanced image
 def check_black_ink(col):
-    return (col[0] < 110 and col[1] < 110 and col[2] < 110)
+    return (col[0] < 100 and col[1] < 100 and col[2] < 100)
 
 # Make it blackish
 def modulate_color_black(color):
@@ -24,7 +26,7 @@ def check_surroundings(x, y, color):
     test_ink = 0
     for test_x in range(x - pixel_range, x + pixel_range + 1):
         for test_y in range(y - pixel_range, y + pixel_range + 1):
-            if check_ink(color):
+            if check_blue_ink(color) or check_black_ink(color):
                 test_ink += 1
                 if (test_ink >= min_ink):
                     out.putpixel((x, y), modulate_ink(color))
@@ -33,24 +35,19 @@ def check_surroundings(x, y, color):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input-ink', nargs='?', default="blue", choices=['blue', 'black'], help="input ink color to be used for detection, dark blue ink may give better results with black detection mode")
+# parser.add_argument('-i', '--input-ink', nargs='?', default="blue", choices=['blue', 'black'], help="input ink color to be used for detection, dark blue ink may give better results with black detection mode")
 parser.add_argument('-o', '--output-ink', nargs='?', default="black", choices=['blue', 'black'], help="output ink color of the generated copy")
 args = parser.parse_args()
-print(args)
 
-if(args.input_ink == "blue"):
-    check_ink = check_blue_ink
-    print('blue')
-elif(args.input_ink == "black"):
-    check_ink = check_black_ink
-    print('black')
+# if(args.input_ink == "blue"):
+#     check_ink = check_blue_ink
+# elif(args.input_ink == "black"):
+#     check_ink = check_black_ink
 
 if(args.output_ink == "blue"):
     modulate_ink = modulate_color_blue
-    print('blue')
 elif(args.output_ink == "black"):
     modulate_ink = modulate_color_black
-    print('black')
 
 if not os.path.exists("./after-pdf"):
     os.makedirs("./after-pdf")
@@ -82,7 +79,10 @@ for pdf in pdfs:
         print("Converting Image no: %s" % (i + 1))
 
         filter = ImageEnhance.Color(img)
-        img = filter.enhance(4)
+        img = filter.enhance(2)
+
+        # for testing hmm
+        img.save('./hmm.png')
 
         out = Image.new(mode="RGB", size=(img.width, img.height))
 
@@ -97,7 +97,7 @@ for pdf in pdfs:
         print("Completed processing Image no: %s" % (i + 1))
 
         # for testing kek
-        # out.save('./kek.png')
+        out.save('./kek.png')
 
     final_images[0].save("./after-pdf/" + pdf,
                          save_all=True, append_images=final_images)

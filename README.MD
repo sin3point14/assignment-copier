@@ -11,7 +11,7 @@ Requires python3
 - `pip3 install -r requirements.txt`
 - `mkdir before-pdf`
 - Put all input PDFs into the above made directory
-- `python3 script.py [-h] [-i [{blue,black}]] [-o [{blue,black}]]`
+- `python3 script.py [-h] [-o [{blue,black}]]`
 - Find converted PDFs in after-pdf
 
 #### TODO
