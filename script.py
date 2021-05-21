@@ -76,43 +76,49 @@ for pdf in pdfs:
 
     print("Opening PDF: %s\nTotal Pages: %s" % (pdf, len(pdf_file)))
 
-    for (i, page) in enumerate(pdf_file):
+    try:
 
-        images = page.getImageList()[0]
+        for (i, page) in enumerate(pdf_file):
 
-        xref = images[0]
+            images = page.getImageList()[0]
 
-        print("Extracting Image no: %s" % (i + 1))
+            xref = images[0]
 
-        pix = fitz.Pixmap(pdf_file, xref)
+            print("Extracting Image no: %s" % (i + 1))
 
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("HSV")
+            pix = fitz.Pixmap(pdf_file, xref)
 
-        print("Converting Image no: %s" % (i + 1))
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("HSV")
 
-        # filter = ImageEnhance.Color(img)
-        # img = filter.enhance(2)
+            print("Converting Image no: %s" % (i + 1))
 
-        # for after applying saturation, detection checks this image
-        img.convert('RGB').save('./hmm.png')
+            # filter = ImageEnhance.Color(img)
+            # img = filter.enhance(2)
 
-        out = Image.new(mode="HSV", size=(img.width, img.height))
+            # for after applying saturation, detection checks this image
+            img.convert('RGB').save('./hmm.png')
 
-        pixel_range = 0
-        min_ink = 1
+            out = Image.new(mode="HSV", size=(img.width, img.height))
 
-        for x in range(img.width):
-            for y in range(img.height):
-                out.putpixel((x,y), check_surroundings(x, y, img.getpixel((x, y)), check_ink))
+            pixel_range = 0
+            min_ink = 1
 
-        out = out.convert('RGB')
+            for x in range(img.width):
+                for y in range(img.height):
+                    out.putpixel((x,y), check_surroundings(x, y, img.getpixel((x, y)), check_ink))
 
-        final_images.append(out)
-        print("Completed processing Image no: %s" % (i + 1))
+            out = out.convert('RGB')
 
-        # for checking output
-        out.save('./kek.png')
+            final_images.append(out)
+            print("Completed processing Image no: %s" % (i + 1))
 
-    final_images[0].save("./after-pdf/" + pdf,
-                         save_all=True, append_images=final_images[1:])
-    print("Completed Processing PDF: %s" % (pdf))
+            # for checking output
+            out.save('./kek.png')
+
+        final_images[0].save("./after-pdf/" + pdf,
+                            save_all=True, append_images=final_images[1:])
+        print("Completed Processing PDF: %s" % (pdf))
+        
+    except Exception as e:
+        print("Failed processing %s" % (pdf))
+        print(e)
